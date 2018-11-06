@@ -313,5 +313,8 @@ sudo echo "LC_ALL=\"en_US.UTF-8\"" >> /etc/default/locale
 # Assign permissions to "vagrant" user
 sudo chown -R vagrant /usr/local
 
+sudo mkdir -p /etc/kong
+echo "trusted_ips = 0.0.0.0/0,::/0" >> /etc/kong/kong.conf
+
 echo .
 echo "Successfully Installed Kong version: $KONG_VERSION"
