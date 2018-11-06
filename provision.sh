@@ -31,7 +31,11 @@ else
    CASSANDRA_VERSION=3.0.9
 fi
 
-POSTGRES_VERSION=9.5
+sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main"
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+
+POSTGRES_VERSION=9.6
 
 #Set some version dependent options
 
@@ -144,6 +148,7 @@ psql -U postgres <<EOF
 CREATE USER kong;
 CREATE DATABASE kong OWNER kong;
 CREATE DATABASE kong_tests OWNER kong;
+CREATE DATABASE wicked OWNER kong;
 EOF
 
 fi
@@ -156,6 +161,9 @@ echo "*************************************************************************"
 
 sudo apt-get install -y redis-server
 sudo chown vagrant /var/log/redis/redis-server.log
+sudo sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf
+sudo service redis-server stop
+sudo /usr/bin/redis-server /etc/redis/redis.conf
 
 #####################
 echo "*************************************************************************"
