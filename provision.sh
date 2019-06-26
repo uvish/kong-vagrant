@@ -294,7 +294,7 @@ if [ $KONG_NUM_VERSION -ge 001500 ]; then
 fi
 
 # Adjust LUA_PATH to find the source and plugin dev setup
-echo "export LUA_PATH=\"/kong/?.lua;/kong/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;/kong-plugin/kong/plugins/?;/kong-plugin/kong/plugins/?/?.lua;;\"" >> /home/vagrant/.bashrc
+echo "export LUA_PATH=\"/kong/?.lua;/kong/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;;\"" >> /home/vagrant/.bashrc
 echo "if [ \$((1 + RANDOM % 20)) -eq 1 ]; then kong roar; fi" >> /home/vagrant/.bashrc
 
 # Set Test::Nginx variables since it cannot have sockets on a mounted drive
@@ -313,6 +313,8 @@ sudo chown -R vagrant /usr/local
 
 sudo mkdir -p /etc/kong
 echo "trusted_ips = 0.0.0.0/0,::/0" >> /etc/kong/kong.conf
+echo "" >> /etc/kong/kong.conf
+echo "lua_package_path=/kong/?.lua;/kong/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;/kong-plugin/kong/plugins/?;/kong-plugin/kong/plugins/?/?.lua" >> /etc/kong/kong.conf
 
 if [ $KONG_NUM_VERSION -ge 001500 ]; then
   # Allow non-root to start Kong with transparent flag
