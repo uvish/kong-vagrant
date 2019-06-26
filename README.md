@@ -49,10 +49,15 @@ $ vagrant up
 
 # start Kong, by ssh into the vm
 $ vagrant ssh
-$ kong start --run-migrations
+$ kong migrations bootstrap
+# if you are running Kong < 0.15.0, run this instead:
+# $ kong start --run-migrations
+$ kong start
 
 # alternatively use ssh -c option to start Kong
-$ vagrant ssh -c "kong start --run-migrations"
+$ vagrant ssh -c "kong migrations bootstrap && kong start"
+# or with Kong < 0.15.0:
+# $ vagrant ssh -c "kong start --run-migrations"
 ```
 
 Kong is now started and is available on the [exposed ports](#exposed-ports).
@@ -68,10 +73,10 @@ You should receive a JSON response:
 
 ```javascript
 {
-  "tagline": "Welcome to Kong",
+  "tagline": "Welcome to kong",
   "version": "x.x.x",
-  "hostname": "precise64",
-  "lua_version": "LuaJIT 2.1.0-alpha",
+  "hostname": "bionic64",
+  "lua_version": "LuaJIT 2.1.0-beta3",
   "plugins": {
     "enabled_in_cluster": {},
     "available_on_server": [
@@ -120,12 +125,16 @@ $ cd /kong
 $ make dev
 
 # only if you want to run the custom plugin, tell Kong to load it
-$ export KONG_CUSTOM_PLUGINS=myplugin
+$ export KONG_PLUGINS=bundled,myplugin
+# if you are running Kong < 0.14.0, run this instead:
+# $ export KONG_CUSTOM_PLUGINS=myplugin
 
 # startup kong: while inside '/kong' call `kong` from the repo as `bin/kong`!
 # we will also need to ensure that migrations are up to date
 $ cd /kong
-$ bin/kong migrations up
+$ bin/kong migrations bootstrap
+# if you are running Kong < 0.15.0, run this instead of bootstrap:
+# $ bin/kong migrations up
 $ bin/kong start
 ```
 
@@ -148,6 +157,26 @@ To start using the plugin, execute from the host:
 # 'catch-all' setup with the `uris` field set to '/'
 # NOTE: for pre-0.10 versions 'uris=' below should be 'request_path='
 $ curl -i -X POST \
+  --url http://localhost:8001/services/ \
+  --data 'name=mockbin' \
+  --data 'url=http://mockbin.org/request'
+
+$ curl -i -X POST \
+  --url http://localhost:8001/services/mockbin/routes \
+  --data 'paths=/'
+
+# add the custom plugin, to our new api
+$ curl -i -X POST \
+  --url http://localhost:8001/services/mockbin/plugins \
+  --data 'name=myplugin'
+```
+
+If you are using an older version of Kong follow the instructions below instead:
+```shell
+# create an api that simply echoes the request using mockbin, using a
+# 'catch-all' setup with the `uris` field set to '/'
+# NOTE: for pre-0.10 versions 'uris=' below should be 'request_path='
+$ curl -i -X POST \
   --url http://localhost:8001/apis/ \
   --data 'name=mockbin' \
   --data 'upstream_url=http://mockbin.org/request' \
@@ -155,7 +184,7 @@ $ curl -i -X POST \
 
 # add the custom plugin, to our new api
 $ curl -i -X POST \
-  --url http://localhost:8001/apis/mockbin/plugins/ \
+  --url http://localhost:8001/apis/mockbin/plugins \
   --data 'name=myplugin'
 ```
 
@@ -163,6 +192,7 @@ Check whether it is working by making a request from the host:
 ```shell
 $ curl -i http://localhost:8000
 ```
+
 The response you get should be an echo (by Mockbin) of the request. But in the
 response headers the plugin has now inserted a header `Bye-World`.
 
@@ -177,12 +207,15 @@ specified when building the Vagrant box will lead to unpredictable results.
 $ vagrant ssh
 
 # only if you want to run the custom plugin, tell Kong to load it
-$ export KONG_CUSTOM_PLUGINS=myplugin
+$ export KONG_PLUGINS=bundled,myplugin
+# if you are running Kong < 0.14.0, run this instead:
+# $ export KONG_CUSTOM_PLUGINS=myplugin
 
 # startup kong: while inside '/kong' call `kong` from the repo as `bin/kong`!
-# we will also need to ensure that migrations are up to date
 $ cd /kong
-$ bin/kong migrations up
+$ bin/kong migrations bootstrap
+# if you are running Kong < 0.15.0, run this instead of bootstrap:
+# $ bin/kong migrations up
 $ bin/kong start
 ```
 
@@ -307,7 +340,7 @@ environment variables:
 
 | name                           | description                                                                                    | default                                                       |
 | ------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `KONG_VERSION`                 | the Kong version number to download and install at the provision step                          | `0.14.1`                                                      |
+| `KONG_VERSION`                 | the Kong version number to download and install at the provision step                          | `1.2.0`                                                       |
 | `KONG_VB_MEM`                  | virtual machine memory (RAM) size *(in MB)*                                                    | `4096`                                                        |
 | `KONG_CASSANDRA`               | the major Cassandra version to use, either `2` or `3`                                          | `3`, or `2` for Kong versions `9.x` and older                 |
 | `KONG_PATH`                    | the path to mount your local Kong source under the guest's `/kong` folder                      | `./kong`, `../kong`, or nothing. In this order.               |
@@ -344,10 +377,11 @@ or if you prefer all repos on the same level:
 
 The (non-configurable) exposed ports are;
 
-- `8000` Proxy port
-- `8443` SSL Proxy port
+- `8000` HTTP Proxy port
+- `8443` HTTPS Proxy port
 - `8001` Admin API
 - `8444` SSL Admin API
+- `9000` TCP Proxy port (both TLS and non-TLS) (only available with Kong >= 0.15.0)
 - `65432` Postgres datastore
 
 These are mapped 1-on-1 between the host and guest.
@@ -380,36 +414,22 @@ $ vagrant ssh
 $ sudo service postgresql start
 ```
 
-
 ### Windows ###
 
-When using the Vagrant box on Windows, in combination with the source
-repositories, then you might run into issues due to text file incompatibilities.
-Windows line endings are not supported in unix shell scripts. This problem does
-not apply to Lua files, since Lua is agnostic to the different line end markers.
+When using the Vagrant box on Windows there are some extra items to watch out for:
 
-Most notably there are 2 files that cause problems (but there might be more):
-
-- `/kong/bin/busted` command line script for testing
-- `/kong/bin/kong` command line script for starting/stopping Kong
-
-The reason they have Windows line endings is because they are mounted from the
-host system. And the Windows `git` client most likely converted them to Windows
-format when checking out the repository.
-
-Workaround:
+1. you cannot run the Vagrant-box inside another VM, so you have to run it on
+   the Windows host.
+2. in combination with the source repositories you might run into issues due to
+   text file incompatibilities. Windows line endings are not supported in unix
+   shell scripts. Use the `fix-windows` makefile target to fix this.
 
 ```shell
 # ssh into the vm
 $ vagrant ssh
 $ cd /kong
-
-# checkout the files using the unix git client which will check them out again
-# (but without doing the CrLf conversion that the Windows client does).
-$ git checkout -- bin/busted bin/kong
+$ make fix-windows
 ```
-
-Now you can use the `bin/kong` and `bin/busted` commands as usual.
 
 ### Incompatible versions error
 
@@ -455,7 +475,7 @@ KONG_VB_MEM=4096 vagrant up
 resty -c 65000 bin/busted -v -o gtest
 ```
 
-### Vagrant error; The box 'hashicorp/precise64' could not be found
+### Vagrant error; The box 'ubuntu/bionic64' could not be found
 
 There is a known issue with Vagrant on OS X with an included `curl` version
 that fails. See [stack overflow](https://stackoverflow.com/questions/40473943/vagrant-box-could-not-be-found-or-could-not-be-accessed-in-the-remote-catalog)
