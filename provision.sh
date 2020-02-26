@@ -28,11 +28,11 @@ if [ "$CASSANDRA_VERSION" = "2" ]; then
    CASSANDRA_VERSION=2.2.13
    CASSANDRA_VERSION_REPO=22x
 else
-   CASSANDRA_VERSION=3.11.4
+   CASSANDRA_VERSION=3.11.5
    CASSANDRA_VERSION_REPO=311x
 fi
 
-POSTGRES_VERSION=9.6
+POSTGRES_VERSION=10
 
 # Set some version dependent options
 KONG_DOWNLOAD_URL="https://github.com/Kong/kong/releases/download/$KONG_VERSION/kong-$KONG_VERSION.precise_all.deb"
@@ -58,6 +58,19 @@ if [ $KONG_NUM_VERSION -ge 001500 ]; then
 
   # Kong 0.15.0 has a stream module, let's enable that too
   KONG_STREAM_LISTEN="0.0.0.0:9000 transparent"
+fi
+
+if [ $KONG_NUM_VERSION -ge 010300 ]; then
+  # use Bionic now instead of Trusty
+  KONG_DOWNLOAD_URL="https://bintray.com/kong/kong-deb/download_file?file_path=kong-${KONG_VERSION}.bionic.amd64.deb"
+fi
+
+if [ $KONG_NUM_VERSION -ge 020000 ]; then
+  # revert to defaults for these listeners
+  unset KONG_PROXY_LISTEN
+  unset KONG_STREAM_LISTEN
+  # update admin to defaults again, but on 0.0.0.0 instead of 127.0.0.1
+  KONG_ADMIN_LISTEN="0.0.0.0:8001 reuseport backlog=16384, 0.0.0.0:8444 http2 ssl reuseport backlog=16384"
 fi
 
 sudo chown -R vagrant /usr/local
@@ -289,8 +302,10 @@ fi
 
 # Set stream and proxy listen addresses for Kong > 0.15.0
 if [ $KONG_NUM_VERSION -ge 001500 ]; then
-  echo "export KONG_PROXY_LISTEN=\"$KONG_PROXY_LISTEN\"" >> /home/vagrant/.bashrc
-  echo "export KONG_STREAM_LISTEN=\"$KONG_STREAM_LISTEN\"" >> /home/vagrant/.bashrc
+  if [ $KONG_NUM_VERSION -lt 020000 ]; then
+    echo "export KONG_PROXY_LISTEN=\"$KONG_PROXY_LISTEN\"" >> /home/vagrant/.bashrc
+    echo "export KONG_STREAM_LISTEN=\"$KONG_STREAM_LISTEN\"" >> /home/vagrant/.bashrc
+  fi
 fi
 
 # Adjust LUA_PATH to find the source and plugin dev setup
@@ -317,8 +332,11 @@ echo "" >> /etc/kong/kong.conf
 echo "lua_package_path=/kong/?.lua;/kong/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;/kong-plugin/?.lua;/kong-plugin/?/init.lua;/kong-plugin/kong/plugins/?;/kong-plugin/kong/plugins/?/?.lua" >> /etc/kong/kong.conf
 
 if [ $KONG_NUM_VERSION -ge 001500 ]; then
-  # Allow non-root to start Kong with transparent flag
-  sudo setcap cap_net_admin=eip /usr/local/openresty/nginx/sbin/nginx
+  if [ $KONG_NUM_VERSION -lt 020000 ]; then
+    # Allow non-root to start Kong with transparent flag
+    # only if version: 0.15.0 <= Kong < 2.0.0
+    sudo setcap cap_net_admin=eip /usr/local/openresty/nginx/sbin/nginx
+  fi
 fi
 
 echo .
