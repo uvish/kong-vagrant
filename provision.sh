@@ -28,7 +28,7 @@ if [ "$CASSANDRA_VERSION" = "2" ]; then
    CASSANDRA_VERSION=2.2.13
    CASSANDRA_VERSION_REPO=22x
 else
-   CASSANDRA_VERSION=3.11.5
+   CASSANDRA_VERSION=3.11.6
    CASSANDRA_VERSION_REPO=311x
 fi
 
@@ -338,6 +338,23 @@ if [ $KONG_NUM_VERSION -ge 001500 ]; then
     sudo setcap cap_net_admin=eip /usr/local/openresty/nginx/sbin/nginx
   fi
 fi
+
+# store the Kong version build, and add a warning
+echo "export KONG_VERSION_BUILD=$KONG_VERSION"                     >> /home/vagrant/.bashrc
+echo "if [ -f \"/kong/bin/kong\" ]; then"                          >> /home/vagrant/.bashrc
+echo "  pushd /kong > /dev/null"                                   >> /home/vagrant/.bashrc
+echo "  LAST_TAG=\$(git describe --tags)"                          >> /home/vagrant/.bashrc
+echo "  if [ ! \"\$LAST_TAG\" == \"\$KONG_VERSION_BUILD\" ]; then" >> /home/vagrant/.bashrc
+echo "    echo \"*******************************************************************************\""   >> /home/vagrant/.bashrc
+echo "    echo \" WARNING: The Kong source in /kong has latest tag \$LAST_TAG\""                      >> /home/vagrant/.bashrc
+echo "    echo \"          whilst this vagrant box was build against version \$KONG_VERSION_BUILD.\"" >> /home/vagrant/.bashrc
+echo "    echo \"          Please make sure the checked-out version in /kong matches the\""           >> /home/vagrant/.bashrc
+echo "    echo \"          binaries of \$KONG_VERSION_BUILD.\""                                       >> /home/vagrant/.bashrc
+echo "    echo \"*******************************************************************************\""   >> /home/vagrant/.bashrc
+echo "  fi"                                                        >> /home/vagrant/.bashrc
+echo "  popd > /dev/null"                                          >> /home/vagrant/.bashrc
+echo "fi"                                                          >> /home/vagrant/.bashrc
+
 
 echo .
 echo "Successfully Installed Kong version: $KONG_VERSION"
