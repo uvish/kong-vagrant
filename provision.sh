@@ -106,7 +106,7 @@ echo "*************************************************************************"
 # sudo -E add-apt-repository "deb https://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main"
 
 wget -q -O - '$@' https://www.apache.org/dist/cassandra/KEYS | sudo -E apt-key add -
-sudo -E add-apt-repository "deb http://www.apache.org/dist/cassandra/debian $CASSANDRA_VERSION_REPO main"
+sudo -E add-apt-repository "deb http://www.apache.org/dist/cassandra/debian/dists/ $CASSANDRA_VERSION_REPO main"
 
 sudo -E apt-get update -qq
 sudo -E apt-get upgrade -qq
