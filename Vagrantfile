@@ -86,6 +86,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.cpus = cpus
     vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/ — timesync-set-threshold", 10000]
     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+    v.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+    v.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
   end
 
   config.vm.box = "ubuntu/bionic64"
