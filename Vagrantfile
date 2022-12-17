@@ -84,6 +84,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.name = "vagrant_kong"
     vb.memory = memory
     vb.cpus = cpus
+    vb.gui = true
     vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/ — timesync-set-threshold", 10000]
     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
