@@ -110,8 +110,8 @@ echo "*************************************************************************"
 
  #wget -q -O - '$@' https://www.apache.org/dist/cassandra/KEYS | sudo -E apt-key add -
  #sudo -E add-apt-repository "deb http://www.apache.org/dist/cassandra/debian 311x main"
- curl https://downloads.apache.org/cassandra/KEYS | sudo apt-key add -
- echo "deb https://debian.cassandra.apache.org 41x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+ wget -q -O - https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+ echo "deb http://www.apache.org/dist/cassandra/debian 40x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list deb
 
 sudo -E apt-get update -qq
 sudo -E apt-get upgrade -qq
