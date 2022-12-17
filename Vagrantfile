@@ -91,7 +91,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
   end
 
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/trusty64"
   config.vm.boot_timeout = 300
 
   if not source == ""
