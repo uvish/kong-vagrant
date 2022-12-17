@@ -92,6 +92,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.box = "ubuntu/bionic64"
+  config.vm.boot_timeout = 300
 
   if not source == ""
     config.vm.synced_folder source, "/kong"
