@@ -104,13 +104,13 @@ echo "*************************************************************************"
 
  #wget -q -O - '$@' https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo -E apt-key add -
  #sudo -E add-apt-repository "deb https://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main"
-  wget --quiet -O --no-check-certificate - http://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+  wget --no-check-certificate -q -O - http://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
   sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
 
  #wget -q -O - '$@' https://www.apache.org/dist/cassandra/KEYS | sudo -E apt-key add -
  #sudo -E add-apt-repository "deb http://www.apache.org/dist/cassandra/debian 311x main"
- wget -q -O --no-check-certificate - http://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+ wget --no-check-certificate -q -O - http://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
  echo "deb http://www.apache.org/dist/cassandra/debian 40x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list deb
 
 sudo -E apt-get update -qq
